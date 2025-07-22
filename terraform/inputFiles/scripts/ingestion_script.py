@@ -68,8 +68,8 @@ if not orders:
         "order_date": formatted_date,
         "product_id": "prod-X",
         "quantity": 1,
-        "order_total": NULL
-        "category": NULL
+        "order_total": None,
+        "category": None
     })
 
 # --- Create DataFrame using schema ---

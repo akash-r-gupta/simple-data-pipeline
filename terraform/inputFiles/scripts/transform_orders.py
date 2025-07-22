@@ -18,7 +18,7 @@ args = getResolvedOptions(sys.argv, [
     "JOB_NAME",
     "source_path",
     "destination_parquet_path",
-    "destination_csv_path"
+    "destination_csv_path",
     "database_name",
     "table_name",
     "crawler_name"

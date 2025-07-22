@@ -14,7 +14,7 @@ resource "aws_glue_job" "orders_glue_job" {
 
   default_arguments = {
     "--job-bookmark-option"      = "job-bookmark-enable"
-    "--source_path"              = "" #"s3://${aws_s3_bucket.data_lake_bucket.id}/raw/orders/"
+    "--source_path"              = "s3://${aws_s3_bucket.data_lake_bucket.id}/raw/orders/"
     "--destination_parquet_path" = "s3://${aws_s3_bucket.data_lake_bucket.id}/curated/orders/parquet/"
     "--destination_csv_path"     = "s3://${aws_s3_bucket.data_lake_bucket.id}/curated/orders/csv/"
     "--database_name"            = "${aws_glue_catalog_database.data_lake_glue_database.name}"
@@ -81,7 +81,7 @@ resource "aws_glue_catalog_table" "curated_orders_table" {
 }
 
 # Glue Crawler to detect the Schema and ingest data into catalog
-resource "aws_glue_crawler" "curated_order_crawler" {
+resource "aws_glue_crawler" "curated_orders_crawler" {
   name          = "curated_orders_crawler"
   role          = aws_iam_role.glue_crawler_role.arn 
   database_name = aws_glue_catalog_database.data_lake_glue_database.name 

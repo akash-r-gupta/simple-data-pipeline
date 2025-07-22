@@ -16,7 +16,7 @@ resource "aws_iam_role" "etl_glue_job_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "glue_service_role_policy_attachment" {
+resource "aws_iam_role_policy_attachment" "_crawler_glue_service_role_policy_attachment" {
   role       = aws_iam_role.etl_glue_job_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
 }

@@ -122,6 +122,75 @@ resource "aws_iam_role_policy_attachment" "glue_service_role" {
   role       = aws_iam_role.ingestion_glue_job_role.name
 }
 
+# IAM Role for Glue Crawler
+resource "aws_iam_role" "glue_crawler_role" {
+  name = "glue_crawler_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "glue.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# Attach the AWS Glue Service Role policy to the crawler role
+resource "aws_iam_role_policy_attachment" "glue_service_role_policy_attachment" {
+  role       = aws_iam_role.glue_crawler_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
+}
+
+# Policy for Glue Crawler Access
+resource "aws_iam_role_policy" "glue_crawler_access_policy" {
+  name = "GlueCrawlerAccessPolicy"
+  role = aws_iam_role.glue_crawler_role.name
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "glue:GetDatabase",
+          "glue:GetTable",
+          "glue:CreateTable",
+          "glue:UpdateTable",
+          "glue:DeleteTable",
+          "glue:CreatePartition",
+          "glue:BatchCreatePartition",
+          "glue:UpdatePartition",
+          "glue:DeletePartition",
+          "glue:GetCatalogs",
+          "glue:GetPartitions",
+          "glue:*"
+        ],
+        Resource = [
+          "arn:aws:glue:${var.region}:${data.aws_caller_identity.current.account_id}:catalog",
+          "arn:aws:glue:${var.region}:${data.aws_caller_identity.current.account_id}:database/${aws_glue_catalog_database.data_lake_glue_database.name}",
+          "arn:aws:glue:${var.region}:${data.aws_caller_identity.current.account_id}:table/${aws_glue_catalog_database.data_lake_glue_database.name}/*"
+        ]
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:ListBucket",
+          "s3:GetObject"
+        ],
+        Resource = [
+          "arn:aws:s3:::${aws_s3_bucket.data_lake_bucket.id}",
+          "arn:aws:s3:::${aws_s3_bucket.data_lake_bucket.id}/*"
+        ]
+      }
+    ]
+  })
+}
+
 # IAM Role for the Lambda Function
 resource "aws_iam_role" "lambda_trigger_role" {
   name = "lambda-s3-to-glue-trigger-role"

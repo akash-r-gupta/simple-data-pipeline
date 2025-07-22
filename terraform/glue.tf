@@ -19,7 +19,7 @@ resource "aws_glue_job" "orders_glue_job" {
     "--destination_csv_path"     = "s3://${aws_s3_bucket.data_lake_bucket.id}/curated/orders/csv/"
     "--database_name"            = "${aws_glue_catalog_database.data_lake_glue_database.name}"
     "--table_name"               = "${aws_glue_catalog_table.curated_orders_table.name}"
-    "--crawler_name"             = ""
+    "--crawler_name"             = "${aws_glue_crawler.curated_orders_crawler.name}"
   }
 }
 

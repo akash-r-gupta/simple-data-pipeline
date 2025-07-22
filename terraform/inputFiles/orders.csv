@@ -1,0 +1,11 @@
+order_id,customer_id,order_date,product_id,quantity,order_total,category
+ord1001,cust42,2025-07-15,prod-A,3,100.0,electronics
+ord1002,cust12,2025-07-14,prod-B,5,,books
+ord1003,cust33,2025-07-13,prod-C,2,89.5,
+ord1004,cust25,2025-07-12,prod-D,7,,clothing
+ord1005,cust18,2025-07-11,prod-E,1,, 
+ord1006,cust05,2025-07-10,prod-F,4,25.25,home
+ord1007,cust31,2025-07-09,prod-G,8,15.99,
+ord1008,cust11,INVALID_DATE,prod-A,2,105.0,toys
+ord1009,cust47,2025-07-08,prod-B,3,xyz,food
+ord1010,cust19,2025-07-07,prod-C,6,79.0,books

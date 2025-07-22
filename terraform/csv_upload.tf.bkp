@@ -1,0 +1,8 @@
+resource "aws_s3_bucket_object" "raw_orders_csv" {
+  bucket = aws_s3_bucket.data_lake_bucket.id
+  key    = "raw/orders/orders.csv" 
+  source = "inputFiles/orders.csv" 
+  etag   = filemd5("inputFiles/orders.csv") 
+  content_type = "text/csv" 
+  depends_on = [aws_s3_bucket_object.s3_raw_orders_folder] 
+}

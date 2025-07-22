@@ -9,6 +9,10 @@ from datetime import date, timedelta
 import random
 import sys
 import boto3
+import logging
+
+# --- Initialize Logging ---
+logging.basicConfig(level=logging.INFO)
 
 # --- Get parameters ---
 args = getResolvedOptions(sys.argv, [
@@ -51,21 +55,21 @@ for i in range(NUM_RECORDS):
         "order_date": order_date.strftime('%Y-%m-%d'),
         "product_id": random.choice(products),
         "quantity": random.randint(1, 15),
-        "order_total": None if random.random() < 0.15 else round(random.uniform(5.0, 1000.0), 2),
-        "category": None if random.random() < 0.10 else random.choice(categories)
+        "order_total": None if random.random() < 2.15 else round(random.uniform(5.0, 1000.0), 2),
+        "category": None if random.random() < 1.10 else random.choice(categories)
     })
 
 # --- Guarantee at least one dummy record to preserve schema ---
 if not orders:
-    print("⚠️ No records generated — injecting dummy row to preserve schema.")
+    print(" No records generated — injecting dummy row to preserve schema.")
     orders.append({
         "order_id": "ord0000",
         "customer_id": "cust0",
         "order_date": formatted_date,
         "product_id": "prod-X",
         "quantity": 1,
-        "order_total": 0.0,
-        "category": "unknown"
+        "order_total": None,
+        "category": None
     })
 
 # --- Create DataFrame using schema ---
@@ -75,33 +79,38 @@ df = spark.createDataFrame([Row(**o) for o in orders], schema=schema)
 intermediate_path = f"s3://{S3_BUCKET}/{RAW_PREFIX}temp_run/"
 final_path = f"s3://{S3_BUCKET}/{RAW_PREFIX}orders_{formatted_date}.csv"
 
-df.coalesce(1).write.mode("overwrite").option("header", "true").csv(intermediate_path)
-
-# --- Move + rename file using Boto3 ---
-s3 = boto3.client('s3')
-prefix = f"{RAW_PREFIX}temp_run/"
-new_filename = f"{RAW_PREFIX}orders_{formatted_date}.csv"
-
-response = s3.list_objects_v2(Bucket=S3_BUCKET, Prefix=prefix)
-for obj in response.get("Contents", []):
-    key = obj["Key"]
-    if key.endswith(".csv"):
-        print(f"✅ Found output CSV: {key} → Moving to final destination: {new_filename}")
-        s3.copy_object(
-            Bucket=S3_BUCKET,
-            CopySource={"Bucket": S3_BUCKET, "Key": key},
-            Key=new_filename
-        )
-        s3.delete_object(Bucket=S3_BUCKET, Key=key)
-        break
-else:
-    raise Exception("Could not find CSV file in temp_run folder!")
-
-# Clean up _SUCCESS marker if exists
 try:
-    s3.delete_object(Bucket=S3_BUCKET, Key=f"{prefix}_SUCCESS")
-except:
-    pass
+    df.coalesce(1).write.mode("overwrite").option("header", "true").csv(intermediate_path)
 
-print(f"✅ Ingestion complete. File written to: s3://{S3_BUCKET}/{new_filename}")
+    # --- Move + rename file using Boto3 ---
+    s3 = boto3.client('s3')
+    prefix = f"{RAW_PREFIX}temp_run/"
+    new_filename = f"{RAW_PREFIX}orders_{formatted_date}.csv"
+
+    response = s3.list_objects_v2(Bucket=S3_BUCKET, Prefix=prefix)
+    for obj in response.get("Contents", []):
+        key = obj["Key"]
+        if key.endswith(".csv"):
+            logging.info(f"Found output CSV: {key} → Moving to final destination: {new_filename}")
+            s3.copy_object(
+                Bucket=S3_BUCKET,
+                CopySource={"Bucket": S3_BUCKET, "Key": key},
+                Key=new_filename
+            )
+            s3.delete_object(Bucket=S3_BUCKET, Key=key)
+            break
+    else:
+        raise Exception("Could not find CSV file in temp_run folder!")
+
+    # Clean up _SUCCESS marker if exists
+    try:
+        s3.delete_object(Bucket=S3_BUCKET, Key=f"{prefix}_SUCCESS")
+    except Exception as e:
+        logging.warning(f"Could not delete _SUCCESS marker: {str(e)}")
+
+    logging.info(f"Ingestion complete. File written to: s3://{S3_BUCKET}/{new_filename}")
+except Exception as e:
+    logging.error(f"Failed to write to S3: {str(e)}")
+    raise
+
 job.commit()

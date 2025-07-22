@@ -6,7 +6,7 @@ variable "region" {
 variable "data_lake_bucket_name" {
   description = "A unique S3 bucket name for the data lake."
   type        = string
-  default     = "aegon-interview-akash"
+  default     = "akash-datalake-3-1"
 }
 
 variable "glue_job_script_name" {

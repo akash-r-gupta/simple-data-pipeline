@@ -83,7 +83,7 @@ resource "aws_glue_catalog_table" "curated_orders_table" {
 # Glue Crawler to detect the Schema and ingest data into catalog
 resource "aws_glue_crawler" "curated_order_crawler" {
   name          = "curated_orders_crawler"
-  role          = aws_iam_role.etl_glue_job_role.arn 
+  role          = aws_iam_role.glue_crawler_role.arn 
   database_name = aws_glue_catalog_database.data_lake_glue_database.name 
   table_prefix  = "curated_orders_"  # Prefix for the tables created/updated by this crawler
 

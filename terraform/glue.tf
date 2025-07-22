@@ -17,6 +17,9 @@ resource "aws_glue_job" "orders_glue_job" {
     "--source_path"              = "" #"s3://${aws_s3_bucket.data_lake_bucket.id}/raw/orders/"
     "--destination_parquet_path" = "s3://${aws_s3_bucket.data_lake_bucket.id}/curated/orders/parquet/"
     "--destination_csv_path"     = "s3://${aws_s3_bucket.data_lake_bucket.id}/curated/orders/csv/"
+    "--database_name"            = "${aws_glue_catalog_database.data_lake_glue_database.name}"
+    "--table_name"               = "${aws_glue_catalog_table.curated_orders_table.name}"
+    "--crawler_name"             = ""
   }
 }
 
@@ -74,6 +77,23 @@ resource "aws_glue_catalog_table" "curated_orders_table" {
   partition_keys {
     name = "processing_date"
     type = "date"
+  }
+}
+
+# Glue Crawler to detect the Schema and ingest data into catalog
+resource "aws_glue_crawler" "curated_order_crawler" {
+  name          = "curated_orders_crawler"
+  role          = aws_iam_role.etl_glue_job_role.arn 
+  database_name = aws_glue_catalog_database.data_lake_glue_database.name 
+  table_prefix  = "curated_orders_"  # Prefix for the tables created/updated by this crawler
+
+  s3_target {
+    path = "s3://${aws_s3_bucket.data_lake_bucket.id}/curated/orders/parquet/"  # Path to crawl
+  }
+
+  schema_change_policy {
+    update_behavior = "UPDATE_IN_DATABASE"  # Behavior on schema change
+    delete_behavior = "LOG"  # What to do when a table is deleted
   }
 }
 
